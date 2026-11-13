@@ -1,0 +1,38 @@
+@host = http://localhost:5075
+
+### Listar noticias publicadas
+GET {{host}}/api/noticias?soloPublicadas=true&pagina=1&tamanoPagina=10
+
+### Noticias de un rango de fechas (inclusivo), las más antiguas primero
+GET {{host}}/api/noticias?desde=2026-09-01&hasta=2026-09-30&orden=Antiguas
+
+### Archivo: cantidad de noticias por año y mes
+GET {{host}}/api/noticias/archivo
+
+### Crear noticia
+POST {{host}}/api/noticias
+Content-Type: application/json
+
+{
+  "titulo": "Semana de la Ciencia",
+  "resumen": "Feria de proyectos de los grados 6° a 11°.",
+  "contenido": "Los estudiantes presentan sus proyectos de investigación en el patio central.",
+  "categoria": "Academica",
+  "fechaPublicacion": "2026-10-05",
+  "imagenUrl": null,
+  "publicada": true
+}
+
+### Radicar PQRS
+POST {{host}}/api/pqrs
+Content-Type: application/json
+
+{
+  "nombreCompleto": "Acudiente de prueba",
+  "correo": "acudiente@example.com",
+  "mensaje": "Quisiera información sobre el proceso de matrícula para grado 6°.",
+  "tipo": "Peticion"
+}
+
+### Estado de la API y la base de datos
+GET {{host}}/health

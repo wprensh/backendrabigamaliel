@@ -1,0 +1,38 @@
+# Blueprint de Render: crea el servicio de la API a partir de este repositorio.
+# En Render: New > Blueprint > conectar el repositorio backendrabigamaliel.
+# Render pedirá el valor de las variables marcadas con sync: false.
+services:
+  - type: web
+    name: rabigamaliel-api
+    runtime: docker
+    plan: free               # Sin costo; se duerme tras 15 min sin visitas. Con presupuesto aprobado: starter (USD 7/mes).
+    region: ohio             # Misma región que la base de datos en Neon (AWS US East 2, Ohio).
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    autoDeploy: true         # Cada push a main vuelve a desplegar.
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: PORT
+        value: "8080"
+      # Cadena de conexión de Neon, pegada tal cual (postgresql://...).
+      - key: ConnectionStrings__DefaultConnection
+        sync: false
+      # Clave de emergencia y de la configuración inicial del panel (crear el primer superadministrador).
+      # Render la genera; se consulta en Environment. También deriva la firma de las sesiones.
+      - key: Administracion__ClaveApi
+        generateValue: true
+      # Sitio que puede llamar a la API (GitHub Pages). Agregar __1 con el dominio propio cuando exista.
+      - key: Cors__OrigenesPermitidos__0
+        value: https://wprensh.github.io
+      - key: Database__AplicarMigraciones
+        value: "true"
+      - key: DetrasDeProxy
+        value: "true"
+      # Notificaciones push de la app instalada (claves VAPID: npx web-push generate-vapid-keys).
+      - key: Push__ClavePublica
+        sync: false
+      - key: Push__ClavePrivada
+        sync: false
+      - key: Push__Asunto
+        value: https://wprensh.github.io/frontendrabigamaliel/   # Cambiar por el dominio propio cuando exista.
