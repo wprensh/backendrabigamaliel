@@ -1,6 +1,6 @@
-# Backend · I.E. Rabí Gamaliel
+# Backend · Fundación Rabí Gamaliel
 
-API REST de la plataforma web y académica de la **Institución Educativa Rabí Gamaliel**.
+API REST de la plataforma web y académica de la **Fundación Educativa Rabí Gamaliel**.
 Construida con **.NET 9 Minimal APIs**, **Arquitectura Limpia**, **Entity Framework Core 9** (Code-First) y **PostgreSQL**.
 
 Frontend: [frontendrabigamaliel](https://github.com/wprensh/frontendrabigamaliel)

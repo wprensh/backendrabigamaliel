@@ -142,7 +142,7 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();                       // /openapi/v1.json
     app.MapScalarApiReference(options =>    // /scalar/v1 : documentación interactiva
-        options.WithTitle("API I.E. Rabí Gamaliel"));
+        options.WithTitle("API Fundación Rabí Gamaliel"));
 }
 else
 {

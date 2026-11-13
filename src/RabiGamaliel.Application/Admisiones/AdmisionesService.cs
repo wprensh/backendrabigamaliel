@@ -168,7 +168,7 @@ public sealed class AdmisionesService(
                 $"Solicitud de cupo radicada: {solicitud.Radicado}",
                 $"Hola, {solicitud.AcudienteNombre}:\n\nRecibimos la solicitud de cupo para {solicitud.NombreAspirante} en grado {GradosEscolares.Nombre(solicitud.GradoSolicitado)} " +
                 $"({solicitud.AnioLectivo}).\n\nSu radicado es {solicitud.Radicado}. Con él y el documento del aspirante puede consultar el estado y cargar documentos en " +
-                "la sección Admisiones del sitio web.\n\n— Secretaría · I.E. Rabí Gamaliel"));
+                "la sección Admisiones del sitio web.\n\n— Secretaría · Fundación Rabí Gamaliel"));
         }
 
         return new AdmisionRadicadaResponse(solicitud.Radicado, solicitud.CreadoEn);
@@ -280,7 +280,7 @@ public sealed class AdmisionesService(
                 $"Su solicitud {solicitud.Radicado}: {NombreEstado(solicitud.Estado)}",
                 $"Hola, {solicitud.AcudienteNombre}:\n\nLa solicitud de cupo de {solicitud.NombreAspirante} cambió a: {NombreEstado(solicitud.Estado)}." +
                 (solicitud.MensajeFamilia is { } m ? $"\n\nMensaje de la secretaría:\n{m}" : string.Empty) +
-                $"\n\nConsulte el detalle con el radicado {solicitud.Radicado} en la sección Admisiones del sitio web.\n\n— Secretaría · I.E. Rabí Gamaliel"));
+                $"\n\nConsulte el detalle con el radicado {solicitud.Radicado} en la sección Admisiones del sitio web.\n\n— Secretaría · Fundación Rabí Gamaliel"));
         }
 
         return SolicitudAdmisionResponse.Desde(solicitud, await repository.DocumentosAsync(id, ct));

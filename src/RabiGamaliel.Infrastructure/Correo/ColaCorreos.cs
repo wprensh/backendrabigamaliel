@@ -27,7 +27,7 @@ public sealed class OpcionesCorreo
     /// <summary>Dirección que aparece como remitente.</summary>
     public string? Remitente { get; init; }
 
-    public string NombreRemitente { get; init; } = "I.E. Rabí Gamaliel";
+    public string NombreRemitente { get; init; } = "Fundación Rabí Gamaliel";
 
     public bool Configurado => !string.IsNullOrWhiteSpace(Servidor) && !string.IsNullOrWhiteSpace(Remitente);
 }
