@@ -1,4 +1,5 @@
 using RabiGamaliel.Domain.Academico;
+using RabiGamaliel.Domain.Simulacros;
 using Microsoft.EntityFrameworkCore;
 
 namespace RabiGamaliel.Infrastructure.Persistence.Seed;
@@ -21,6 +22,18 @@ internal static class DatosIniciales
         }
 
         context.SaveChanges();
+
+        var banco = context.Set<PreguntaBanco>();
+        var existentes = banco.Select(p => new { p.Area, p.Contexto, p.Enunciado }).AsEnumerable()
+            .Select(p => BancoSaber.Clave(p.Area, p.Contexto, p.Enunciado)).ToHashSet();
+        banco.AddRange(BancoSaber.Faltantes(existentes));
+        context.SaveChanges();
+
+        if (!context.Set<Simulacro>().Any(s => s.Titulo == BancoSaber.TituloSimulacro))
+        {
+            CrearSimulacro(context, [.. banco]);
+            context.SaveChanges();
+        }
     }
 
     public static async Task SembrarAsync(DbContext context, CancellationToken ct)
@@ -32,6 +45,48 @@ internal static class DatosIniciales
         }
 
         await context.SaveChangesAsync(ct);
+
+        var banco = context.Set<PreguntaBanco>();
+        var existentes = (await banco.Select(p => new { p.Area, p.Contexto, p.Enunciado }).ToListAsync(ct))
+            .Select(p => BancoSaber.Clave(p.Area, p.Contexto, p.Enunciado)).ToHashSet();
+        banco.AddRange(BancoSaber.Faltantes(existentes));
+        await context.SaveChangesAsync(ct);
+
+        if (!await context.Set<Simulacro>().AnyAsync(s => s.Titulo == BancoSaber.TituloSimulacro, ct))
+        {
+            CrearSimulacro(context, await banco.ToListAsync(ct));
+            await context.SaveChangesAsync(ct);
+        }
+    }
+
+    /// <summary>
+    /// Simulacro Saber 11 de entrenamiento: 20 preguntas del banco (4 por área), para 10.° y 11.°, abierto hasta el
+    /// 31 de diciembre de 2027. Coordinación puede cambiar fechas, grados o preguntas desde el panel.
+    /// </summary>
+    private static void CrearSimulacro(DbContext context, IReadOnlyList<PreguntaBanco> banco)
+    {
+        var colombia = TimeSpan.FromHours(-5);
+        var simulacro = Simulacro.Crear(
+            BancoSaber.TituloSimulacro,
+            "Prueba de entrenamiento con la estructura del examen Saber 11 del ICFES: 20 preguntas de selección múltiple con única " +
+            "respuesta (4 de lectura crítica, 4 de matemáticas, 4 de sociales y ciudadanas, 4 de ciencias naturales y 4 de inglés). " +
+            "Tienes 45 minutos. Lee con calma cada pregunta y su texto, descarta las opciones que no son posibles y responde todas. " +
+            "Al entregar verás tu puntaje por área y competencia, y recomendaciones de refuerzo en los temas donde te fue más bajo.",
+            TipoPrueba.Saber11, [10, 11],
+            new DateTimeOffset(2026, 11, 13, 0, 0, 0, colombia),
+            new DateTimeOffset(2027, 12, 31, 23, 59, 0, colombia),
+            45, mostrarRespuestas: true);
+        context.Add(simulacro);
+
+        var orden = 0;
+        foreach (var elegida in BancoSaber.DelSimulacro)
+        {
+            var pregunta = banco.FirstOrDefault(p => p.Area == elegida.Area && p.Contexto == elegida.Contexto && p.Enunciado == elegida.Enunciado);
+            if (pregunta is not null)
+            {
+                context.Add(pregunta.CopiarA(simulacro.Id, ++orden));
+            }
+        }
     }
 
     /// <summary>

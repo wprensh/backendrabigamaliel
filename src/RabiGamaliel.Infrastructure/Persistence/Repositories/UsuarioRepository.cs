@@ -25,6 +25,11 @@ internal sealed class UsuarioRepository(ApplicationDbContext db) : IUsuarioRepos
     {
         var consulta = db.Usuarios.AsNoTracking();
 
+        if (query.OcultarSuperAdministradores)
+        {
+            consulta = consulta.Where(u => !u.EsSuperAdministrador);
+        }
+
         if (!string.IsNullOrWhiteSpace(query.Buscar))
         {
             var patron = $"%{EscaparLike(query.Buscar.Trim())}%";

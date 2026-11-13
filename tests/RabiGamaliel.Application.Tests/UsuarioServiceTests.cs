@@ -47,6 +47,22 @@ public sealed class UsuarioServiceTests
     }
 
     [Fact]
+    public async Task Quien_no_es_superadministrador_no_ve_ni_modifica_a_los_superadministradores()
+    {
+        var super = (await _usuarios.CrearAsync(
+            new CrearUsuarioRequest("dueno", "Superadministrador", null, "Clave1234", true, []), CancellationToken.None)).Value!;
+        var ct = CancellationToken.None;
+
+        Assert.Equal(ErrorType.NoEncontrado, (await _usuarios.ObtenerAsync(super.Id, ct, actorEsSuper: false)).Error?.Tipo);
+        Assert.Equal(ErrorType.NoEncontrado, (await _usuarios.EliminarAsync(super.Id, Guid.NewGuid(), ct, actorEsSuper: false)).Error?.Tipo);
+        Assert.Equal(ErrorType.NoEncontrado,
+            (await _usuarios.RestablecerClaveAsync(super.Id, new RestablecerClaveRequest("OtraClave123"), ct, actorEsSuper: false)).Error?.Tipo);
+        Assert.Equal(ErrorType.NoAutorizado,
+            (await _usuarios.CrearAsync(new CrearUsuarioRequest("otro", "Otro", null, "Clave1234", true, []), ct, actorEsSuper: false)).Error?.Tipo);
+        Assert.True((await _usuarios.ObtenerAsync(super.Id, ct)).IsSuccess);
+    }
+
+    [Fact]
     public async Task Crear_con_permiso_de_editar_agrega_el_de_ver()
     {
         var creado = await _usuarios.CrearAsync(NuevoUsuario(permisos: "Noticias:Editar"), CancellationToken.None);

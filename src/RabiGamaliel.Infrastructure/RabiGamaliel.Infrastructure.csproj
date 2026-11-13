@@ -1,6 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <InternalsVisibleTo Include="RabiGamaliel.Application.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\RabiGamaliel.Application\RabiGamaliel.Application.csproj" />
     <ProjectReference Include="..\RabiGamaliel.Domain\RabiGamaliel.Domain.csproj" />
   </ItemGroup>
