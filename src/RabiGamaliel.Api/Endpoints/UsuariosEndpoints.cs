@@ -57,53 +57,65 @@ internal static class UsuariosEndpoints
     private static Guid Actor(ClaimsPrincipal principal) =>
         Guid.TryParse(principal.FindFirstValue(JwtRegisteredClaimNames.Sub), out var id) ? id : Guid.Empty;
 
+    /// <summary>
+    /// true si quien llama es superadministrador o usa la clave de administración (llave de emergencia).
+    /// Rector, coordinador, secretaria y demás usuarios del panel no ven a los superadministradores.
+    /// </summary>
+    private static async Task<bool> EsSuperAsync(UsuarioActual usuarioActual, CancellationToken ct) =>
+        await usuarioActual.ObtenerAsync(ct) is not { } usuario || usuario.EsSuperAdministrador;
+
     private static async Task<Ok<PagedResult<UsuarioResponse>>> ListarAsync(
-        IUsuarioService service, CancellationToken ct, string? buscar = null, int pagina = 1, int tamanoPagina = 20) =>
-        TypedResults.Ok(await service.ListarAsync(new UsuarioQuery(buscar, pagina, tamanoPagina), ct));
+        IUsuarioService service, UsuarioActual usuarioActual, CancellationToken ct,
+        string? buscar = null, int pagina = 1, int tamanoPagina = 20)
+    {
+        var ocultar = !await EsSuperAsync(usuarioActual, ct);
+        return TypedResults.Ok(await service.ListarAsync(new UsuarioQuery(buscar, pagina, tamanoPagina, ocultar), ct));
+    }
 
     private static Ok<IReadOnlyList<ModuloPermisosResponse>> CatalogoPermisos(IUsuarioService service) =>
         TypedResults.Ok(service.CatalogoPermisos());
 
     private static async Task<Results<Ok<UsuarioResponse>, ProblemHttpResult>> ObtenerAsync(
-        Guid id, IUsuarioService service, CancellationToken ct)
+        Guid id, IUsuarioService service, UsuarioActual usuarioActual, CancellationToken ct)
     {
-        var resultado = await service.ObtenerAsync(id, ct);
+        var resultado = await service.ObtenerAsync(id, ct, await EsSuperAsync(usuarioActual, ct));
         return resultado.Match<Results<Ok<UsuarioResponse>, ProblemHttpResult>>(
             usuario => TypedResults.Ok(usuario),
             error => error.ToProblem());
     }
 
     private static async Task<Results<CreatedAtRoute<UsuarioResponse>, ProblemHttpResult>> CrearAsync(
-        CrearUsuarioRequest request, IUsuarioService service, CancellationToken ct)
+        CrearUsuarioRequest request, IUsuarioService service, UsuarioActual usuarioActual, CancellationToken ct)
     {
-        var resultado = await service.CrearAsync(request, ct);
+        var resultado = await service.CrearAsync(request, ct, await EsSuperAsync(usuarioActual, ct));
         return resultado.Match<Results<CreatedAtRoute<UsuarioResponse>, ProblemHttpResult>>(
             usuario => TypedResults.CreatedAtRoute(usuario, "ObtenerUsuario", new { id = usuario.Id }),
             error => error.ToProblem());
     }
 
     private static async Task<Results<Ok<UsuarioResponse>, ProblemHttpResult>> ActualizarAsync(
-        Guid id, ActualizarUsuarioRequest request, ClaimsPrincipal principal, IUsuarioService service, CancellationToken ct)
+        Guid id, ActualizarUsuarioRequest request, ClaimsPrincipal principal, IUsuarioService service,
+        UsuarioActual usuarioActual, CancellationToken ct)
     {
-        var resultado = await service.ActualizarAsync(id, request, Actor(principal), ct);
+        var resultado = await service.ActualizarAsync(id, request, Actor(principal), ct, await EsSuperAsync(usuarioActual, ct));
         return resultado.Match<Results<Ok<UsuarioResponse>, ProblemHttpResult>>(
             usuario => TypedResults.Ok(usuario),
             error => error.ToProblem());
     }
 
     private static async Task<Results<NoContent, ProblemHttpResult>> RestablecerClaveAsync(
-        Guid id, RestablecerClaveRequest request, IUsuarioService service, CancellationToken ct)
+        Guid id, RestablecerClaveRequest request, IUsuarioService service, UsuarioActual usuarioActual, CancellationToken ct)
     {
-        var resultado = await service.RestablecerClaveAsync(id, request, ct);
+        var resultado = await service.RestablecerClaveAsync(id, request, ct, await EsSuperAsync(usuarioActual, ct));
         return resultado.Match<Results<NoContent, ProblemHttpResult>>(
             _ => TypedResults.NoContent(),
             error => error.ToProblem());
     }
 
     private static async Task<Results<NoContent, ProblemHttpResult>> EliminarAsync(
-        Guid id, ClaimsPrincipal principal, IUsuarioService service, CancellationToken ct)
+        Guid id, ClaimsPrincipal principal, IUsuarioService service, UsuarioActual usuarioActual, CancellationToken ct)
     {
-        var resultado = await service.EliminarAsync(id, Actor(principal), ct);
+        var resultado = await service.EliminarAsync(id, Actor(principal), ct, await EsSuperAsync(usuarioActual, ct));
         return resultado.Match<Results<NoContent, ProblemHttpResult>>(
             _ => TypedResults.NoContent(),
             error => error.ToProblem());

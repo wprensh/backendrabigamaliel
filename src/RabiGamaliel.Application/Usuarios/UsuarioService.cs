@@ -9,15 +9,15 @@ public interface IUsuarioService
 {
     Task<PagedResult<UsuarioResponse>> ListarAsync(UsuarioQuery query, CancellationToken ct);
 
-    Task<Result<UsuarioResponse>> ObtenerAsync(Guid id, CancellationToken ct);
+    Task<Result<UsuarioResponse>> ObtenerAsync(Guid id, CancellationToken ct, bool actorEsSuper = true);
 
-    Task<Result<UsuarioResponse>> CrearAsync(CrearUsuarioRequest request, CancellationToken ct);
+    Task<Result<UsuarioResponse>> CrearAsync(CrearUsuarioRequest request, CancellationToken ct, bool actorEsSuper = true);
 
-    Task<Result<UsuarioResponse>> ActualizarAsync(Guid id, ActualizarUsuarioRequest request, Guid actorId, CancellationToken ct);
+    Task<Result<UsuarioResponse>> ActualizarAsync(Guid id, ActualizarUsuarioRequest request, Guid actorId, CancellationToken ct, bool actorEsSuper = true);
 
-    Task<Result<Unit>> RestablecerClaveAsync(Guid id, RestablecerClaveRequest request, CancellationToken ct);
+    Task<Result<Unit>> RestablecerClaveAsync(Guid id, RestablecerClaveRequest request, CancellationToken ct, bool actorEsSuper = true);
 
-    Task<Result<Unit>> EliminarAsync(Guid id, Guid actorId, CancellationToken ct);
+    Task<Result<Unit>> EliminarAsync(Guid id, Guid actorId, CancellationToken ct, bool actorEsSuper = true);
 
     IReadOnlyList<ModuloPermisosResponse> CatalogoPermisos();
 }
@@ -39,6 +39,16 @@ public sealed class UsuarioService(
         "Usuario.UltimoSuperAdministrador",
         "Debe quedar al menos un superadministrador activo.");
 
+    private static readonly Error SoloSuperAdministrador = Error.NoAutorizado(
+        "Usuario.SoloSuperAdministrador",
+        "Solo un superadministrador puede crear o asignar superadministradores.");
+
+    /// <summary>
+    /// Quien no es superadministrador (rector, coordinador, secretaria...) no ve los registros de superadministradores:
+    /// para él no existen (no aparecen en la lista ni se pueden abrir, editar, cambiar su clave ni eliminar).
+    /// </summary>
+    private static bool Oculto(Usuario usuario, bool actorEsSuper) => usuario.EsSuperAdministrador && !actorEsSuper;
+
     public async Task<PagedResult<UsuarioResponse>> ListarAsync(UsuarioQuery query, CancellationToken ct)
     {
         var normalizada = query with
@@ -52,17 +62,22 @@ public sealed class UsuarioService(
         return pagina.Map(u => UsuarioResponse.Desde(u, ahora));
     }
 
-    public async Task<Result<UsuarioResponse>> ObtenerAsync(Guid id, CancellationToken ct)
+    public async Task<Result<UsuarioResponse>> ObtenerAsync(Guid id, CancellationToken ct, bool actorEsSuper = true)
     {
         var usuario = await repository.ObtenerPorIdAsync(id, ct);
-        return usuario is null ? NoEncontrado(id) : UsuarioResponse.Desde(usuario, reloj.GetUtcNow());
+        return usuario is null || Oculto(usuario, actorEsSuper) ? NoEncontrado(id) : UsuarioResponse.Desde(usuario, reloj.GetUtcNow());
     }
 
-    public async Task<Result<UsuarioResponse>> CrearAsync(CrearUsuarioRequest request, CancellationToken ct)
+    public async Task<Result<UsuarioResponse>> CrearAsync(CrearUsuarioRequest request, CancellationToken ct, bool actorEsSuper = true)
     {
         if (await crearValidator.ValidarAsync(request, ct) is { } error)
         {
             return error;
+        }
+
+        if (request.EsSuperAdministrador && !actorEsSuper)
+        {
+            return SoloSuperAdministrador;
         }
 
         var nombreUsuario = Usuario.NormalizarNombreUsuario(request.NombreUsuario);
@@ -81,7 +96,7 @@ public sealed class UsuarioService(
     }
 
     public async Task<Result<UsuarioResponse>> ActualizarAsync(
-        Guid id, ActualizarUsuarioRequest request, Guid actorId, CancellationToken ct)
+        Guid id, ActualizarUsuarioRequest request, Guid actorId, CancellationToken ct, bool actorEsSuper = true)
     {
         if (await actualizarValidator.ValidarAsync(request, ct) is { } error)
         {
@@ -89,9 +104,14 @@ public sealed class UsuarioService(
         }
 
         var usuario = await repository.ObtenerPorIdAsync(id, ct);
-        if (usuario is null)
+        if (usuario is null || Oculto(usuario, actorEsSuper))
         {
             return NoEncontrado(id);
+        }
+
+        if (request.EsSuperAdministrador && !actorEsSuper)
+        {
+            return SoloSuperAdministrador;
         }
 
         if (id == actorId && !request.Activo)
@@ -112,7 +132,8 @@ public sealed class UsuarioService(
         return UsuarioResponse.Desde(usuario, reloj.GetUtcNow());
     }
 
-    public async Task<Result<Unit>> RestablecerClaveAsync(Guid id, RestablecerClaveRequest request, CancellationToken ct)
+    public async Task<Result<Unit>> RestablecerClaveAsync(
+        Guid id, RestablecerClaveRequest request, CancellationToken ct, bool actorEsSuper = true)
     {
         if (await restablecerValidator.ValidarAsync(request, ct) is { } error)
         {
@@ -120,7 +141,7 @@ public sealed class UsuarioService(
         }
 
         var usuario = await repository.ObtenerPorIdAsync(id, ct);
-        if (usuario is null)
+        if (usuario is null || Oculto(usuario, actorEsSuper))
         {
             return NoEncontrado(id);
         }
@@ -131,7 +152,7 @@ public sealed class UsuarioService(
         return Unit.Value;
     }
 
-    public async Task<Result<Unit>> EliminarAsync(Guid id, Guid actorId, CancellationToken ct)
+    public async Task<Result<Unit>> EliminarAsync(Guid id, Guid actorId, CancellationToken ct, bool actorEsSuper = true)
     {
         if (id == actorId)
         {
@@ -139,7 +160,7 @@ public sealed class UsuarioService(
         }
 
         var usuario = await repository.ObtenerPorIdAsync(id, ct);
-        if (usuario is null)
+        if (usuario is null || Oculto(usuario, actorEsSuper))
         {
             return NoEncontrado(id);
         }

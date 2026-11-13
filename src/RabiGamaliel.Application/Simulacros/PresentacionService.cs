@@ -253,6 +253,7 @@ public sealed class PresentacionService(
                 : null,
             revisar ? null
             : simulacro.MostrarRespuestas ? $"Las respuestas correctas se publican al cerrar el simulacro ({simulacro.Fin.ToOffset(FechaColombia.Desfase):dd/MM/yyyy h:mm tt})."
-            : null);
+            : null,
+            RecomendacionesSimulacro.Calcular(preguntas, intento.Respuestas));
     }
 }

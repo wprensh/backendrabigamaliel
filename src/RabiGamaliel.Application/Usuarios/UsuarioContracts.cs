@@ -39,7 +39,8 @@ public sealed record ActualizarUsuarioRequest(
 
 public sealed record RestablecerClaveRequest(string ClaveNueva);
 
-public sealed record UsuarioQuery(string? Buscar = null, int Pagina = 1, int TamanoPagina = 20)
+/// <param name="OcultarSuperAdministradores">true cuando quien consulta no es superadministrador (rector, coordinador, secretaria...).</param>
+public sealed record UsuarioQuery(string? Buscar = null, int Pagina = 1, int TamanoPagina = 20, bool OcultarSuperAdministradores = false)
 {
     public const int TamanoPaginaMaximo = 100;
 }

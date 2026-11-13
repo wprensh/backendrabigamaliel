@@ -91,4 +91,4 @@ public sealed record RevisionPregunta(
 public sealed record ResultadoIntentoResponse(
     Guid SimulacroId, string Titulo, TipoPrueba Tipo, int Aciertos, int Total, double Porcentaje, int? Global, IReadOnlyList<PuntajeArea> PorArea,
     IReadOnlyList<PuntajeCompetencia> PorCompetencia, DateTimeOffset? EntregadoEn, IReadOnlyList<RevisionPregunta>? Revision,
-    string? MensajeRevision);
+    string? MensajeRevision, IReadOnlyList<RecomendacionRefuerzo> Recomendaciones);
