@@ -11,6 +11,12 @@ public enum TipoCertificado
     Reconocimiento = 6,
     Laboral = 7,
     Personalizado = 8,
+
+    /// <summary>Constancia de aprobación o asistencia a un curso o taller (Escuela de Artes e Idiomas Enamorarte).</summary>
+    Curso = 9,
+
+    /// <summary>Constancia de aprobación de un grado.</summary>
+    Grado = 10,
 }
 
 /// <summary>Documento de identidad del beneficiario.</summary>
