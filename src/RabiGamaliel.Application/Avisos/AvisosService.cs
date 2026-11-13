@@ -40,7 +40,7 @@ public interface INotificador
 public sealed class Notificador(IAvisoRepository avisos, IColaCorreos correos, IColaPush? push = null) : INotificador
 {
     public const string PieCorreo =
-        "\n\n— Institución Educativa Rabí Gamaliel\nIngrese al campus virtual con su documento y su clave de acceso para ver el detalle.";
+        "\n\n— Fundación Educativa Rabí Gamaliel\nIngrese al campus virtual con su documento y su clave de acceso para ver el detalle.";
 
     public void Notificar(
         IEnumerable<MiembroCampus> destinatarios, TipoAviso tipo, string titulo, string mensaje, string? enlace, Guid? estudianteId, bool porCorreo)
